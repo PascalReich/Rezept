@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <style th:replace="tables :: DefaultTableStyle"></style>
+  <style th:replace="sidebar :: sidebarStyle"></style>
+</head>
+<body>
+<div th:replace="sidebar :: #sidebar"></div>
+<div id="main">
+  <div th:replace="tables :: RecipeAuthorListTable(${recipes})"></div>
+</div>
+</body>
+</html>

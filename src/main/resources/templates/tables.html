@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <style th:fragment="DefaultTableStyle">
+    tbody tr:nth-child(odd) {
+      background-color: lightgrey;
+    }
+
+    tbody tr{
+      padding: 5px;
+    }
+
+  </style>
+</head>
+<body>
+
+<div th:fragment="RecipeAuthorListTable (recipesAndAuthors)">
+  <table>
+    <thead>
+      <tr>
+        <!--<th>ID</th>-->
+        <th>Recipe</th>
+        <th>Author</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:each="recipe : ${recipesAndAuthors}">
+        <!--<td th:text="${recipe.ID}">ID</td>-->
+        <td><a th:href="|/API/recipes/${recipe.recipeID}|" th:text="${recipe.recipeName}"></a></td>
+        <td><a th:href="|/API/users/${recipe.userID}|" th:text="${recipe.username}"></a></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<div th:fragment="RecipeListTable (recipes)">
+  <table>
+    <tr>
+      <!--<th>ID</th>-->
+      <th>NAME</th>
+      <th>IN STOCK</th>
+    </tr>
+    <tr th:each="recipe : ${recipes}">
+      <!--<td th:text="${recipe.ID}">ID</td>-->
+      <td><a th:href="|/API/recipes/${recipe.recipeID}|" th:text="${recipe.recipeName}"></a></td>
+      <td text="{prod.inStock}? #{true} : #{false}">yes</td>
+    </tr>
+  </table>
+</div>
+</body>
+</html>
