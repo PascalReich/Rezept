@@ -82,6 +82,12 @@
       <artifactId>derbyclient</artifactId>
       <version>10.15.2.0</version>
     </dependency>
+    <dependency>
+      <groupId>org.jetbrains</groupId>
+      <artifactId>annotations</artifactId>
+      <version>RELEASE</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -136,6 +142,15 @@
         </configuration>
       </plugin>
     </plugins>
+
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <resource>
+        <directory>src/main/resources/templates</directory>
+      </resource>
+    </resources>
   </build>
 
 
