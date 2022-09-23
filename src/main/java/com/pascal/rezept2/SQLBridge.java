@@ -120,6 +120,12 @@ public class SQLBridge {
     return resultValues;
   }
 
+  public void updateUser(UserInterface user) throws SQLException {
+    String query = user.toSQLQuery();
+    Statement stmt = conn.createStatement();
+    stmt.executeUpdate(query);
+  }
+
   public static void main(String[] args) throws SQLException {
     SQLBridge bridge = new SQLBridge();
     bridge.connectionToDerby();

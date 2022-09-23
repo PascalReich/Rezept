@@ -21,7 +21,12 @@ import io.vertx.ext.web.templ.thymeleaf.ThymeleafTemplateEngine;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
 
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 import java.io.*;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.spec.KeySpec;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -30,11 +35,11 @@ import java.util.stream.Collectors;
 public class MainRestServer extends AbstractVerticle {
   private final Map<String, JsonObject> products = new HashMap<>();
   private final SQLBridge sqlBridge = new SQLBridge();
-
-  private final RecipeRequestHandler recipeRequestHandler = new RecipeRequestHandler(sqlBridge);
-  private final UserRequestHandler userRequestHandler = new UserRequestHandler(sqlBridge);
-
   private final ThymeleafTemplateEngine engine = ThymeleafTemplateEngine.create(vertx);
+
+  private final RecipeRequestHandler recipeRequestHandler = new RecipeRequestHandler(sqlBridge, engine);
+  private final UserRequestHandler userRequestHandler = new UserRequestHandler(sqlBridge, engine);
+
 
   @Override
   public void start() {
@@ -76,6 +81,7 @@ public class MainRestServer extends AbstractVerticle {
     setUpAPIRouter(mainRouter);
 
     mainRouter.get("/home").handler(this::serveHomepage);
+    mainRouter.get("/login").handler(userRequestHandler::getLoginPage);
 
     mainRouter.get("/").handler(ctx -> ctx.reroute("/home"));
 
@@ -128,11 +134,15 @@ public class MainRestServer extends AbstractVerticle {
 
     // Set up /API/users REST endpoints
     APIRouter.get("/users/:userID").handler(userRequestHandler::getUser);
-    APIRouter.put("/users/:userID").handler(this::handleAddProduct);
+    APIRouter.put("/users/new").handler(this::handleAddProduct);
     APIRouter.get("/users").handler(userRequestHandler::listUsers);
+    APIRouter.patch("/users/:userID").handler(userRequestHandler::updateUser);
 
     APIRouter.get("/users/me");
-    APIRouter.post("/users/login"); //TODO implement
+    //APIRouter.get("users/me/update");
+
+    APIRouter.post("/users/login").handler(userRequestHandler::loginUser); //TODO implement
+
 
     mainRouter.route("/API/*").subRouter(APIRouter);
   }
@@ -212,9 +222,11 @@ public class MainRestServer extends AbstractVerticle {
 
   private static class RecipeRequestHandler {
     private final SQLBridge sqlBridge;
+    private final ThymeleafTemplateEngine engine;
 
-    RecipeRequestHandler(SQLBridge s) {
+    RecipeRequestHandler(SQLBridge s, ThymeleafTemplateEngine e) {
       sqlBridge = s;
+      engine = e;
     }
     public void listRecipes (RoutingContext routingContext){
       StringBuilder response = new StringBuilder();
@@ -271,9 +283,11 @@ public class MainRestServer extends AbstractVerticle {
 
   private static class UserRequestHandler {
     private final SQLBridge sqlBridge;
+    private final ThymeleafTemplateEngine engine;
 
-    UserRequestHandler(SQLBridge s) {
+    UserRequestHandler(SQLBridge s, ThymeleafTemplateEngine e) {
       sqlBridge = s;
+      engine = e;
     }
 
     public void listUsers(RoutingContext routingContext) {
@@ -312,6 +326,73 @@ public class MainRestServer extends AbstractVerticle {
       routingContext.response().end(users.get(0).toString());
     }
 
+    public void loginUser(RoutingContext routingContext) {
+      JsonObject jsonObject = routingContext.getBodyAsJson();
+
+      try {
+        System.out.println(getEncryptedPassword(jsonObject.getString("password"), getNewSalt()));
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+
+      // TODO handle rest of login prodedure
+
+      System.out.println(jsonObject);
+    }
+
+    public void updateUser(RoutingContext routingContext) {
+      String userID = routingContext.request().getParam("userID");
+
+      JsonObject jsonObject = routingContext.getBodyAsJson();
+
+      System.out.println(jsonObject);
+
+      if (jsonObject.containsKey("password")) {
+
+        try {
+          byte[] salt = getNewSalt();
+          String password = getEncryptedPassword(jsonObject.getString("password"), salt);
+          // TODO get user from USERS MAP
+
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
+
+    // Returns salt byte array
+    public byte[] getNewSalt() throws NoSuchAlgorithmException {
+      // Don't use Random!
+      SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
+      // NIST recommends minimum 4 bytes. We use 8.
+      byte[] salt = new byte[8];
+      random.nextBytes(salt);
+      return salt;
+    }
+
+    public String getEncryptedPassword(String password, byte[] saltBytes) throws Exception {
+      String algorithm = "PBKDF2WithHmacSHA1";
+      int derivedKeyLength = 160; // for SHA1
+      int iterations = 20000; // NIST specifies 10000
+
+      KeySpec spec = new PBEKeySpec(password.toCharArray(), saltBytes, iterations, derivedKeyLength);
+      SecretKeyFactory f = SecretKeyFactory.getInstance(algorithm);
+
+      byte[] encBytes = f.generateSecret(spec).getEncoded();
+      return Base64.getEncoder().encodeToString(encBytes);
+    }
+
+    public void getLoginPage(RoutingContext routingContext) {
+      engine.render(new JsonObject(), "templates/login", res -> {
+        if (res.succeeded()) {
+          routingContext.response().end(res.result());
+        } else {
+          System.out.println(res.cause().getMessage());
+          res.cause().printStackTrace();
+          routingContext.fail(res.cause());
+        }
+      });
+    }
   }
 }
 

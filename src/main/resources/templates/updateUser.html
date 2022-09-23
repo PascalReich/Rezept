@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+</head>
+<body>
+<div>
+  <form id="user-update-form">
+    <input type="hidden" th:value="${userID}" id="user-id">
+    <input type="text" id="user-name">
+    <input type="text" id="first-name">
+    <input type="text" id="last-name">
+    <input type="submit" id="submit">
+  </form>
+  <script>
+    var form = document.getElementById("user-update-form")
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      //var form = document.querySelector("#formElem");
+      // var form = document.forms[0];
+
+      data = {
+        username : form.querySelector('input[id="user-name"]').value,
+        firstname : form.querySelector('input[id="first-name"]').value,
+        lastname : form.querySelector('input[id="last=name"]').value,
+      }
+
+      let response = await fetch("/users/" + form.querySelector('input[id="user-id"]').value, {
+        method: 'PATCH', // or 'PUT'
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+
+      let text = await response.text(); // read response body as text
+      document.querySelector("#decoded").innerHTML = text;
+    };
+  </script>
+</div>
+</body>
+</html>

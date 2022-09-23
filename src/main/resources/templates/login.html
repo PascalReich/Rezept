@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+</head>
+<body>
+<div>
+  <form id="user-login-form">
+    <input type="text" id="username">
+    <input type="password" id="password">
+    <input type="submit" id="submit">
+  </form>
+  <script>
+    var form = document.getElementById("user-login-form")
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      //var form = document.querySelector("#formElem");
+      // var form = document.forms[0];
+
+      var data = {
+        username: form.querySelector('input[id="username"]').value,
+        password: form.querySelector('input[id="password"]').value,
+      }
+
+      let response = await fetch("API/users/login", {
+        method: 'POST', // or 'PUT'
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+
+      let text = await response.text(); // read response body as text
+      document.querySelector("#decoded").innerHTML = text;
+    };
+  </script>
+</div>
+
+</body>
+</html>

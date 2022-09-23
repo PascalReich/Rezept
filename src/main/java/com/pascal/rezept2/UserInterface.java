@@ -2,6 +2,7 @@ package com.pascal.rezept2;
 
 public interface UserInterface {
 
+  public String toSQLQuery();
   public String getUsername();
 
   public void setUsername(String username);

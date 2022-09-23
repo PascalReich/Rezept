@@ -51,6 +51,14 @@ public class RecipeWithAuthor implements RecipeInterface, UserInterface {
    * @return
    */
   @Override
+  public String toSQLQuery() {
+    return author.toSQLQuery();
+  }
+
+  /**
+   * @return
+   */
+  @Override
   public String getUsername() {
     return author.getUsername();
   }
