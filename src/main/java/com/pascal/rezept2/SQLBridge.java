@@ -5,9 +5,19 @@ import org.jetbrains.annotations.NotNull;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class SQLBridge {
+
+  private static SQLBridge instance;
   private Connection conn;
+
+  public static SQLBridge getInstance() {
+    if (instance == null) {
+      instance = new SQLBridge();
+    }
+    return instance;
+  }
 
   public void connectionToDerby() throws SQLException {
     String dbURL = "jdbc:derby:rezeptDB";
@@ -120,14 +130,30 @@ public class SQLBridge {
     return resultValues;
   }
 
+  public boolean comparePassword(String username, String hash) throws SQLException {
+
+    String query = "SELECT PASSWORD FROM USERS WHERE USERS.USERNAME = '" + username+"'";
+
+    Statement stmt = conn.createStatement();
+    ResultSet rs = stmt.executeQuery(query);
+
+    while (rs.next()) {
+      System.out.println(rs.getString("PASSWORD"));
+      return rs.getString("PASSWORD").equals(hash);
+    }
+
+    return false;
+  }
+
   public void updateUser(UserInterface user) throws SQLException {
     String query = user.toSQLQuery();
     Statement stmt = conn.createStatement();
     stmt.executeUpdate(query);
+    //System.out.println("Updated Users");
   }
 
   public static void main(String[] args) throws SQLException {
-    SQLBridge bridge = new SQLBridge();
+    SQLBridge bridge = SQLBridge.getInstance();
     bridge.connectionToDerby();
     //bridge.createTable();
     List<Recipe> result = bridge.getRecipes();

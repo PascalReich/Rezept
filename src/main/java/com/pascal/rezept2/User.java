@@ -9,6 +9,10 @@ public class User implements UserInterface{
   private String username;
   private String firstName;
   private String lastName;
+
+  private String passwordHash;
+
+  private String passwordSalt; //base 64 encoded
   private final String accountAge;
   private final int userID;
 
@@ -40,7 +44,13 @@ public class User implements UserInterface{
   }
 
   public String toSQLQuery() {
-    return String.format("UPDATE USERS SET USERNAME = %s, FIRSTNAME = %s, LASTNAME = %s WHERE ID = %o", username, firstName, lastName, userID);
+    return String.format("UPDATE USERS SET USERNAME = '%s', FIRSTNAME = '%s', LASTNAME = '%s', PASSWORD_SALT = '%s', PASSWORD = '%s' WHERE ID = %o", username, firstName, lastName, passwordSalt, passwordHash, userID);
+    //TODO make the salt a string
+  }
+
+  public void updatePassword(String passwordHash, String salt) {
+    this.passwordHash = passwordHash;
+    this.passwordSalt = salt;
   }
 
   @Override

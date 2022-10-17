@@ -326,14 +326,41 @@ public class MainRestServer extends AbstractVerticle {
       routingContext.response().end(users.get(0).toString());
     }
 
-    public void loginUser(RoutingContext routingContext) {
-      JsonObject jsonObject = routingContext.getBodyAsJson();
-
+    private void initExistingUser(String username, String password) {
+      // TODO update exisitng users w a password
       try {
-        System.out.println(getEncryptedPassword(jsonObject.getString("password"), getNewSalt()));
+        User user = sqlBridge.getUsers("*", "WHERE USERNAME='" + username+"'").get(0);
+        byte[] salt = getNewSalt();
+
+        String passHash = getEncryptedPassword(password, salt);
+        user.updatePassword(passHash, Base64.getEncoder().encodeToString(salt));
+        sqlBridge.updateUser(user);
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
+    }
+
+    public void loginUser(RoutingContext routingContext) {
+      JsonObject jsonObject = routingContext.getBodyAsJson();
+
+      String passHash;
+
+      try {
+        passHash = getEncryptedPassword(jsonObject.getString("password"), getNewSalt());
+        System.out.println(passHash);
+
+
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+
+      try {
+        System.out.println(sqlBridge.comparePassword(jsonObject.getString("password"), passHash));
+      } catch (SQLException e) {
+        throw new RuntimeException(e);
+      }
+
+      initExistingUser(jsonObject.getString("username"), jsonObject.getString("password"));
 
       // TODO handle rest of login prodedure
 
@@ -352,6 +379,7 @@ public class MainRestServer extends AbstractVerticle {
         try {
           byte[] salt = getNewSalt();
           String password = getEncryptedPassword(jsonObject.getString("password"), salt);
+
           // TODO get user from USERS MAP
 
         } catch (Exception e) {
@@ -384,6 +412,18 @@ public class MainRestServer extends AbstractVerticle {
 
     public void getLoginPage(RoutingContext routingContext) {
       engine.render(new JsonObject(), "templates/login", res -> {
+        if (res.succeeded()) {
+          routingContext.response().end(res.result());
+        } else {
+          System.out.println(res.cause().getMessage());
+          res.cause().printStackTrace();
+          routingContext.fail(res.cause());
+        }
+      });
+    }
+
+    public void getUserUpdatePage(RoutingContext routingContext) {
+      engine.render(new JsonObject(), "templates/updateUser", res -> {
         if (res.succeeded()) {
           routingContext.response().end(res.result());
         } else {
