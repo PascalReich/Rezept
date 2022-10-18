@@ -31,7 +31,10 @@
         body: JSON.stringify(data),
       })
 
-      let text = await response.text(); // read response body as text
+      let text = await response.json(); // read response body as json
+      if (text["auth"] === "true") {
+        window.location.replace("/")
+      }
       document.querySelector("#decoded").innerHTML = text;
     };
   </script>

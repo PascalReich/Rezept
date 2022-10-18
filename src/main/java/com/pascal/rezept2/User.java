@@ -12,17 +12,22 @@ public class User implements UserInterface{
 
   private String passwordHash;
 
+
+
   private String passwordSalt; //base 64 encoded
   private final String accountAge;
   private final int userID;
 
   private static final Map<Integer, User> USER_MAP = new HashMap<>();
 
-  public User(String username, String firstName, String lastName, String accountAge, int userID) {
+  public User(String username, String firstName, String lastName,
+              String accountAge, String passwordHash, String passwordSalt, int userID) {
     this.username = username;
     this.firstName = firstName;
     this.lastName = lastName;
     this.accountAge = accountAge;
+    this.passwordHash = passwordHash;
+    this.passwordSalt = passwordSalt;
     this.userID = userID;
 
     USER_MAP.put(this.userID, this);
@@ -38,9 +43,13 @@ public class User implements UserInterface{
     String username = rs.getString("USERNAME");
     String firstName = rs.getString("FIRSTNAME");
     String lastName = rs.getString("LASTNAME");
+    String passwordHash = rs.getString("PASSWORD");
+    String passwordSalt = rs.getString("PASSWORD_SALT");
+
     //String accountAge = rs.getString("ACCOUNTAGE");
 
-    return new User(username, firstName, lastName, "NOT IMPLEMENTED", userID);
+    return new User(username, firstName, lastName,
+      "NOT IMPLEMENTED", passwordHash, passwordSalt, userID);
   }
 
   public String toSQLQuery() {
@@ -51,6 +60,18 @@ public class User implements UserInterface{
   public void updatePassword(String passwordHash, String salt) {
     this.passwordHash = passwordHash;
     this.passwordSalt = salt;
+  }
+
+  public boolean comparePassword(String password) {
+    return password.equals(this.passwordHash);
+  }
+
+  public boolean checkPassword(String pswd) {
+    return true; // TODO implement
+  }
+
+  public String getPasswordSalt() {
+    return passwordSalt;
   }
 
   @Override

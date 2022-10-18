@@ -153,6 +153,10 @@ public class MainRestServer extends AbstractVerticle {
       data = new JsonObject()
         .put("name", "Vert.x Web")
         .put("recipes", sqlBridge.getRecipesAndAuthors());
+      User user = routingContext.session().get("User");
+      if (user != null) {
+        data.put("username", user.getUsername());
+      }
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
@@ -327,7 +331,6 @@ public class MainRestServer extends AbstractVerticle {
     }
 
     private void initExistingUser(String username, String password) {
-      // TODO update exisitng users w a password
       try {
         User user = sqlBridge.getUsers("*", "WHERE USERNAME='" + username+"'").get(0);
         byte[] salt = getNewSalt();
@@ -344,27 +347,38 @@ public class MainRestServer extends AbstractVerticle {
       JsonObject jsonObject = routingContext.getBodyAsJson();
 
       String passHash;
+      User user;
 
       try {
-        passHash = getEncryptedPassword(jsonObject.getString("password"), getNewSalt());
+        user = sqlBridge.getUsers("*", "WHERE USERNAME='" + jsonObject.getString("username")+ "'").get(0);
+      } catch (SQLException e) {
+        throw new RuntimeException(e);
+      } catch (ArrayIndexOutOfBoundsException e) {
+        throw new RuntimeException(e); // TODO change
+      }
+
+      try {
+        passHash = getEncryptedPassword(jsonObject.getString("password"), Base64.getDecoder().decode(user.getPasswordSalt()));
         System.out.println(passHash);
-
-
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
 
-      try {
-        System.out.println(sqlBridge.comparePassword(jsonObject.getString("password"), passHash));
-      } catch (SQLException e) {
-        throw new RuntimeException(e);
+      if (user.comparePassword(passHash)) {
+        Session session = routingContext.session();
+        session.put("User", user);
+        routingContext.response()
+          .putHeader("Content-Type", "application/json")
+          .end((new JsonObject().put("auth", "true")).toString());
+      } else {
+        routingContext.response()
+          .putHeader("Content-Type", "application/json")
+          .setStatusCode(401)
+          .end((new JsonObject().put("auth", "true")).toString());
       }
 
-      initExistingUser(jsonObject.getString("username"), jsonObject.getString("password"));
-
-      // TODO handle rest of login prodedure
-
-      System.out.println(jsonObject);
+      //initExistingUser(jsonObject.getString("username"), jsonObject.getString("password"));
+      // System.out.println(jsonObject);
     }
 
     public void updateUser(RoutingContext routingContext) {
