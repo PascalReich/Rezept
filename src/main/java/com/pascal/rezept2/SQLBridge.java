@@ -12,6 +12,14 @@ public class SQLBridge {
   private static SQLBridge instance;
   private Connection conn;
 
+  private SQLBridge() {
+
+  }
+
+  /**
+   * Gets gets the SQLBridge singleton instance
+   * @return
+   */
   public static SQLBridge getInstance() {
     if (instance == null) {
       instance = new SQLBridge();
@@ -52,32 +60,22 @@ public class SQLBridge {
     }
   }
 
-  public List<DataWrapper> getTable(DataWrapper source) throws SQLException {
-    String query = "select * from Users"; // + dataReturn.getTableName();
-    Statement stmt = conn.createStatement();
-    ResultSet rs = stmt.executeQuery(query);
-
-    List<DataWrapper> resultValues = new ArrayList<DataWrapper>();
-
-    while (rs.next()) {
-      System.out.println(rs);
-      resultValues.add(DataWrapper.from(rs));
-      /* String coffeeName = rs.getString("COF_NAME");
-            int supplierID = rs.getInt("SUP_ID");
-            float price = rs.getFloat("PRICE");
-            int sales = rs.getInt("SALES");
-            int total = rs.getInt("TOTAL");
-            System.out.println(coffeeName + ", " + supplierID + ", " + price +
-                    ", " + sales + ", " + total);*/
-    }
-
-    return resultValues;
-  }
-
+  /**
+   *
+   * @return all recipes
+   * @throws SQLException
+   */
   public List<Recipe> getRecipes() throws SQLException {
     return getRecipes("*", "");
   }
 
+  /**
+   *
+   * @param columns which columns to select from the table
+   * @param conditions conditions given with "WHERE"
+   * @return all recipes that match conditions
+   * @throws SQLException
+   */
   public List<Recipe> getRecipes(String columns, String conditions) throws SQLException {
     String query = "select " + columns + " from RECIPES " + conditions;
     System.out.println(query);
@@ -94,6 +92,11 @@ public class SQLBridge {
     return resultValues;
   }
 
+  /**
+   * Get all recipes and their associated authors
+   * @return List of RecipeWithAuthor instances
+   * @throws SQLException
+   */
   public List<RecipeWithAuthor> getRecipesAndAuthors() throws SQLException {
     String query = "SELECT * " +
       "FROM Recipes LEFT JOIN Users " +
@@ -111,13 +114,25 @@ public class SQLBridge {
     return resultValues;
   }
 
+  /**
+   * Get all users
+   * @return Returns all users
+   * @throws SQLException
+   */
   public List<User> getUsers() throws SQLException {
     return getUsers("*", "");
   }
 
+  /**
+   *
+   * @param columns the columns of the table to fetch
+   * @param conditions extra conditions with WHERE
+   * @return users that meet the supplied conditions
+   * @throws SQLException
+   */
   public List<User> getUsers(String columns, String conditions) throws SQLException {
     String query = "select " + columns + " from USERS " + conditions;
-    System.out.println(query);
+    //System.out.println(query);
     Statement stmt = conn.createStatement();
     ResultSet rs = stmt.executeQuery(query);
 
@@ -138,13 +153,18 @@ public class SQLBridge {
     ResultSet rs = stmt.executeQuery(query);
 
     while (rs.next()) {
-      System.out.println(rs.getString("PASSWORD"));
+      // System.out.println(rs.getString("PASSWORD"));
       return rs.getString("PASSWORD").equals(hash);
     }
 
     return false;
   }
 
+  /**
+   * Update a user given its UserInterface instance
+   * @param user a UserInterface instance with changed data.
+   * @throws SQLException
+   */
   public void updateUser(UserInterface user) throws SQLException {
     String query = user.toSQLQuery();
     Statement stmt = conn.createStatement();

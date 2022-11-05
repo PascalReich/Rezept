@@ -14,6 +14,12 @@ public class RecipeWithAuthor implements RecipeInterface, UserInterface {
     this.author = author;
   }
 
+  /**
+   * Create a RecipeWithAuthor instance from SQL query results
+   * @param rs a java.sql.ResultSet from a SQL query
+   * @return the RecipeWithAuthor instance
+   * @throws SQLException
+   */
   public static RecipeWithAuthor from(ResultSet rs) throws SQLException {
     return new RecipeWithAuthor(Recipe.from(rs), User.from(rs));
   }
