@@ -77,7 +77,7 @@ public class MainRestServer extends AbstractVerticle {
         System.out.println("Started new Session");
       }
       if (session.get("User") != null) {
-        System.out.printf("Authenticated as %s", ((User) session.get("User")).getUsername());
+        System.out.printf("Authenticated as %s \n", ((User) session.get("User")).getUsername());
       }
       ctx.next();
     });
@@ -135,19 +135,20 @@ public class MainRestServer extends AbstractVerticle {
 
     // Set up /API/recipes REST endpoints
     APIRouter.get("/recipes/:recipeID").handler(recipeRequestHandler::getRecipe);
-    APIRouter.put("/recipes/:recipeID").handler(this::handleAddProduct);
+    APIRouter.put("/recipes/new").handler(this::handleAddProduct);
     APIRouter.get("/recipes").handler(recipeRequestHandler::listRecipes);
 
     // Set up /API/users REST endpoints
+    APIRouter.get("/users/me").handler(userRequestHandler::displayCurrentUser);
+    //APIRouter.get("users/me/update");
+
     APIRouter.get("/users/:userID").handler(userRequestHandler::getUser);
-    APIRouter.put("/users/new").handler(this::handleAddProduct);
+    APIRouter.put("/users/new").handler(userRequestHandler::createUser);
     APIRouter.get("/users").handler(userRequestHandler::listUsers);
     APIRouter.patch("/users/:userID").handler(userRequestHandler::updateUser);
 
 
 
-    APIRouter.get("/users/me");
-    //APIRouter.get("users/me/update");
 
     APIRouter.post("/users/login").handler(userRequestHandler::loginUser); //TODO implement
 
@@ -286,20 +287,7 @@ public class MainRestServer extends AbstractVerticle {
       String userID = routingContext.request().getParam("userID");
 
       //StringBuilder response = new StringBuilder();
-      List<User> users;
-      try {
-        users = sqlBridge.getUsers("*", "WHERE ID=" + userID);
-      } catch (SQLException sqlException) {
-        routingContext.fail(sqlException);
-        return;
-      }
-
-      if (users.isEmpty()) {
-        routingContext.fail(404);
-        return;
-      }
-
-      routingContext.response().end(users.get(0).toString());
+      displayUser(routingContext, userID);
     }
 
     private void initExistingUser(String username, String password) {
@@ -315,6 +303,10 @@ public class MainRestServer extends AbstractVerticle {
       }
     }
 
+    public void createUser(RoutingContext routingContext) {
+
+    }
+
     public void loginUser(RoutingContext routingContext) {
       JsonObject jsonObject = routingContext.getBodyAsJson();
 
@@ -328,6 +320,9 @@ public class MainRestServer extends AbstractVerticle {
       } catch (ArrayIndexOutOfBoundsException e) {
         throw new RuntimeException(e); // TODO change
       }
+
+      //initExistingUser(jsonObject.getString("username"), jsonObject.getString("password"));
+
 
       try {
         passHash = getEncryptedPassword(jsonObject.getString("password"), Base64.getDecoder().decode(user.getPasswordSalt()));
@@ -351,6 +346,30 @@ public class MainRestServer extends AbstractVerticle {
 
       //initExistingUser(jsonObject.getString("username"), jsonObject.getString("password"));
       // System.out.println(jsonObject);
+    }
+
+    public void displayCurrentUser(RoutingContext routingContext) {
+
+      String userID = String.valueOf(((User) routingContext.session().get("User")).getUserID());
+
+      displayUser(routingContext, userID);
+    }
+
+    private void displayUser(RoutingContext routingContext, String userID) {
+      List<User> users;
+      try {
+        users = sqlBridge.getUsers("*", "WHERE ID=" + userID);
+      } catch (SQLException sqlException) {
+        routingContext.fail(sqlException);
+        return;
+      }
+
+      if (users.isEmpty()) {
+        routingContext.fail(404);
+        return;
+      }
+
+      routingContext.response().end(users.get(0).toString());
     }
 
     public void updateUser(RoutingContext routingContext) {
